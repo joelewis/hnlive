@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html> 
+<head>
+  <title>Eat</title>
+</head>
+
+<body>
+  <div id="graphContainer"></div>
+  <script src="/static/underscore.js"></script>
+  <script src="/static/jquery.js"></script>
+  <script src="/static/canvasjs.min.js"></script>
+  
+  <script>
+    
+    // API Ends
+    var topStoriesAPI = "https://hacker-news.firebaseio.com/v0/topstories.json";
+    var itemAPI = "https://hacker-news.firebaseio.com/v0/item/{{itemId}}.json";
+    var algoliaFrontPageAPI = "http://hn.algolia.com/api/v1/search?tags=front_page";
+    
+    var dps = [], chart;
+    
+    var updateChart = function() {
+        console.log('sending request');
+        $.get('/variance').then(function(resp) {
+            console.log(resp);
+            var datapoints = resp.datapoints;
+            var datapoints = datapoints.map(function(dp) {
+                return {
+                    x: new Date(dp.time).getTime(),
+                    y: dp.variance
+                };
+            })
+            dps.splice(0, dps.length);
+            _.each(datapoints, function(dp) {
+                dps.push(dp);
+            });
+            chart.render();
+        });
+            
+    };
+    
+    $(function() { // dom init
+        chart = new CanvasJS.Chart("graphContainer",{
+			title :{
+				text: "Hacker News Activity"
+			},			
+			data: [{
+				type: "line",
+				dataPoints: dps,
+                xValueType: 'dateTime',
+                showInLegend: true,
+                name: 'Activity on adding new comments & top story upvotes'
+			}],
+            legend:{
+                cursor:"pointer",
+            }
+		});
+        
+        chart.render();
+        // update every 5 seconds.
+        updateChart();
+        setInterval(updateChart, 30000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "hnlive",
+  "version": "1.0.0",
+  "description": "Realtime activity graphs @ news.ycombinator.com",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joe B. Lewis",
+  "license": "MIT",
+  "dependencies": {
+    "deferred": "^0.7.5",
+    "express": "^4.14.0",
+    "install": "^0.8.1",
+    "ml-savitzky-golay": "^2.0.4",
+    "mongodb": "^2.2.10",
+    "najax": "^0.7.1",
+    "npm": "^3.10.7",
+    "pg": "^6.1.0",
+    "pg-hstore": "^2.3.2",
+    "sequelize": "^3.24.3",
+    "underscore-node": "^0.1.2"
+  }
+}
