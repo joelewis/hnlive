@@ -219,12 +219,6 @@ var updateStats = function() {
     }
 };
 
-updateData();
-setInterval(updateData, updateInterval);
-
-setInterval(updateStats, 30 * 60000); // update stats everyday
-
-
 app.use('/static', express.static(process.env.PWD+'/public'));
 
 app.get('/variance', function (req, res) {
@@ -284,3 +278,7 @@ app.get('/reset/:secretkey', function (req, res) {
 app.listen(4000, function () {
   console.log('app listening on port 4000!');
 });
+
+updateData();
+setInterval(updateData, updateInterval);
+setInterval(updateStats, 30 * 60000); // update stats everyday
