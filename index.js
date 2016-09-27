@@ -6,9 +6,14 @@ var _ = require('underscore-node');
 var SG = require('ml-savitzky-golay');
 
 var Sequelize = require('sequelize');
-console.log('database URL-------');
-console.log(process.env.DATABASE_URL);
+var env = 'DEVELOPMENT';
+process.env.PWD = process.cwd();
+
 if (process.env.DATABASE_URL) {
+    env = 'PRODUCTION';
+}
+
+if (env == 'PRODUCTION') {
     var db_url = process.env.DATABASE_URL;
 } else {
     var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
@@ -220,7 +225,7 @@ setInterval(updateData, updateInterval);
 setInterval(updateStats, 30 * 60000); // update stats everyday
 
 
-app.use('/static', express.static('public'));
+app.use('/static', express.static(process.env.PWD+'/public'));
 
 app.get('/variance', function (req, res) {
   // stream past 24 hours HN activity data points;
