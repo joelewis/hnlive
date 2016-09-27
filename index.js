@@ -6,6 +6,8 @@ var _ = require('underscore-node');
 var SG = require('ml-savitzky-golay');
 
 var Sequelize = require('sequelize');
+console.log('database URL-------');
+console.log(process.env.DATABASE_URL);
 if (process.env.DATABASE_URL) {
     var db_url = process.env.DATABASE_URL;
 } else {
