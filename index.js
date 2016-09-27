@@ -6,7 +6,12 @@ var _ = require('underscore-node');
 var SG = require('ml-savitzky-golay');
 
 var Sequelize = require('sequelize');
-db_url = "postgresql://joe-2744@localhost:5432/hnlive";
+if (process.env.DATABASE_URL) {
+    var db_url = process.env.DATABASE_URL;
+} else {
+    var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
+}
+
 var sequelize = new Sequelize(db_url);
 app.secretkey = 'joe';
 var maxDataLength = 86400; //12;
