@@ -4,8 +4,9 @@ var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
 var SG = require('ml-savitzky-golay');
-
 var Sequelize = require('sequelize');
+var CronJob = require('cron').CronJob;
+
 var env = 'DEVELOPMENT';
 process.env.PWD = process.cwd();
 
@@ -280,5 +281,22 @@ app.listen(process.env.PORT || 4000, function () {
 });
 
 updateData();
-setInterval(updateData, updateInterval);
-setInterval(updateStats, 30 * 60000); // update stats everyday
+
+var getDp = new CronJob({
+  cronTime: '*/60 * * * * *',
+  onTick: updateData,
+  start: false,
+  timeZone: process.env.TZ
+});
+getDp.start();
+
+var updateStatsJob = new CronJob({
+  cronTime: '0 */30 * * * *',
+  onTick: updateStats,
+  start: false,
+  timeZone: process.env.TZ
+});
+updateStatsJob.start();
+
+// setInterval(updateData, updateInterval);
+// setInterval(updateStats, 30 * 60000); // update stats everyday

@@ -9,6 +9,7 @@
   "author": "Joe B. Lewis",
   "license": "MIT",
   "dependencies": {
+    "cron": "^1.1.0",
     "deferred": "^0.7.5",
     "express": "^4.14.0",
     "install": "^0.8.1",
