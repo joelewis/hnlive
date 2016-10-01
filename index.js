@@ -125,6 +125,6 @@ app.get('/reset/:secretkey', function (req, res) {
     }
 });
 
-app.listen(process.env.PORT || 4000, function () {
+app.listen(process.env.PORT || 4000, '127.0.0.1', function () {
   console.log('app listening on port 4000!');
 });
