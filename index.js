@@ -17,7 +17,8 @@ if (process.env.DATABASE_URL) {
 if (env == 'PRODUCTION') {
     var db_url = process.env.DATABASE_URL;
 } else {
-    var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
+    var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
+    // var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
 }
 
 var sequelize = new Sequelize(db_url);
