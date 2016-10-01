@@ -190,7 +190,7 @@ var updateStats = function() {
 };
 
 var getDp = new CronJob({
-  cronTime: '*/10 * * * * *',
+  cronTime: '*/60 * * * * *',
   onTick: updateData,
   start: false,
   timeZone: process.env.TZ
