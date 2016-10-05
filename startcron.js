@@ -35,6 +35,23 @@ Stat.sync().then(function() {
     console.log('daystats - table ready!');
 });
 
+var getClosestSmoothVariance = function(dps, i) {
+    while (i > 1) {
+        var current = dps[i];
+        var prev = dps[i-1];
+        
+        if (!prev.diff && !current.diff) {
+            var changeMagnitude = Math.abs(current.variance - prev.variance);
+            changeMagnitude = changeMagnitude === 0 ? 0 : Math.log(changeMagnitude);
+            return changeMagnitude;
+        }
+        
+        i--;
+    }
+    
+    return 0;
+};
+
 var Firebase = function() {
     var prevStories = [];
     var prevScore = 0;
@@ -168,7 +185,31 @@ var updateStats = function() {
         // find average of today, by getting all data points within 24 hours span backwards
         sequelize.query('SELECT * from datapoints where time > current_date - 1', {model: DataPoint})
         .then(function(dps) {
-            var average = dps.map(function(dp) {
+            
+            var varianceDps = [];
+            
+            for (var i=1; i<dps.length; i++) {
+                var varianceDp = {                
+                    time: dps[i].time,
+                    diff: dps[i].diff
+                };
+                
+                varianceDp.variance = getClosestSmoothVariance(dps, i);
+                varianceDps.push(varianceDp);
+            }
+            
+            var sharpSignals = varianceDps.map(function(dp) {
+                return dp.variance;
+            });
+            
+            var smoothSignals = SG(sharpSignals, 1, {derivative: 0});
+            
+            var varianceDps = varianceDps.map(function(dp, i) {
+                dp.variance = smoothSignals[i];
+                return dp;
+            });
+            
+            var average = varianceDps.map(function(dp) {
                 return dp.variance;
             }).reduce(function(prev, next) {
                 return prev + next;
