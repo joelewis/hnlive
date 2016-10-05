@@ -4,8 +4,8 @@ var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
 
-var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
-// var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
+// var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
+var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
 var sequelize = new Sequelize(db_url);
 
 var maxDataLength = 86400; //12;

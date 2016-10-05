@@ -18,8 +18,8 @@ if (process.env.DATABASE_URL) {
 if (env == 'PRODUCTION') {
     var db_url = process.env.DATABASE_URL;
 } else {
-    var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
-    // var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
+    // var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
+    var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
 }
 
 var sequelize = new Sequelize(db_url);
@@ -82,7 +82,10 @@ var dow = {
 
 var getLastWeekActivity = function() {
     var dfd = deferred();
-    sequelize.query('SELECT * FROM daystats WHERE day >= (current_date - cast(extract(dow from current_date) as int) - 7) AND day < (current_date - cast(extract(dow from current_date) as int)) ORDER BY day desc', {model: Stat})
+    var querySql = 'SELECT * FROM daystats WHERE day >= DATE_SUB(DATE(NOW()), INTERVAL DAYOFWEEK(NOW())-8 DAY) AND day < DATE_SUB(DATE(NOW()), INTERVAL DAYOFWEEK(NOW())-1 DAY) ORDER BY day desc';
+    // var querySql = 'SELECT * FROM daystats WHERE day >= (current_date - cast(extract(dow from current_date) as int) - 7) AND day < (current_date - cast(extract(dow from current_date) as int)) ORDER BY day desc';
+
+    sequelize.query(querySql, {model: Stat})
             .then(function(stats) {
                 // group by day of week
                 var dowMap = {
