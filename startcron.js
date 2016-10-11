@@ -1,3 +1,5 @@
+
+
 var CronJob = require('cron').CronJob;
 var Sequelize = require('sequelize');
 var deferred = require('deferred');

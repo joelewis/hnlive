@@ -1,5 +1,6 @@
 var express = require('express');
 var app = express();
+var path = require('path');
 var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
@@ -115,6 +116,12 @@ var getLastWeekActivity = function() {
     return dfd.promise;
 };
 
+app.get('/', function(req, res) {
+    res.sendFile('index.html', {
+        root: process.env.PWD + '/public'
+    });
+});
+
 app.use('/static', express.static(process.env.PWD+'/public'));
 
 app.get('/variance', function (req, res) {
@@ -159,8 +166,6 @@ app.get('/lastweek', function(req, res) {
         return res.json({lastWeekActivity: weekactivity});
     });
 });
-
-
 
 app.get('/reset/:secretkey', function(req, res) {
     // drops all tables. authenticate with a secret key.
