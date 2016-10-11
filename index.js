@@ -1,6 +1,5 @@
 var express = require('express');
 var app = express();
-var path = require('path');
 var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
@@ -118,7 +117,7 @@ var getLastWeekActivity = function() {
 
 app.get('/', function(req, res) {
     res.sendFile('index.html', {
-        root: process.env.PWD + '/public'
+        root: __dirname + '/public'
     });
 });
 
