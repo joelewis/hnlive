@@ -7,23 +7,12 @@ var SG = require('ml-savitzky-golay');
 var Sequelize = require('sequelize');
 var CronJob = require('cron').CronJob;
 var moment = require('moment');
-var env = 'DEVELOPMENT';
-process.env.PWD = process.cwd();
+require('dotenv').config() // load config vars from .env into process.env
 
-
-if (process.env.DATABASE_URL) {
-    env = 'PRODUCTION';
-}
-
-if (env == 'PRODUCTION') {
-    var db_url = process.env.DATABASE_URL;
-} else {
-    var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
-    // var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
-}
+var db_url = process.env.DATABASE_URL;
 
 var sequelize = new Sequelize(db_url);
-app.secretkey = 'joe';
+app.secretkey = process.env.SECRET_KEY;
 var maxDataLength = 86400; //12;
 
 // first define the model
@@ -83,6 +72,7 @@ var dow = {
 var getLastWeekActivity = function() {
     var dfd = deferred();
     var querySql = 'SELECT * FROM daystats WHERE day >= DATE_SUB(DATE(NOW()), INTERVAL DAYOFWEEK(NOW())-8 DAY) AND day < DATE_SUB(DATE(NOW()), INTERVAL DAYOFWEEK(NOW())-1 DAY) ORDER BY day desc';
+    // for postgres:
     // var querySql = 'SELECT * FROM daystats WHERE day >= (current_date - cast(extract(dow from current_date) as int) - 7) AND day < (current_date - cast(extract(dow from current_date) as int)) ORDER BY day desc';
 
     sequelize.query(querySql, {model: Stat})

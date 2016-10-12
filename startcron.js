@@ -1,14 +1,11 @@
-
-
 var CronJob = require('cron').CronJob;
 var Sequelize = require('sequelize');
 var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
+require('dotenv').config() // load config vars from .env into process.env
 
-var db_url = 'mysql://root:lewis@localhost:3306/hnlive';
-// var db_url = "postgresql://joe-2744@localhost:5432/hnlive";
-var sequelize = new Sequelize(db_url);
+var sequelize = new Sequelize(process.env.DATABASE_URL);
 
 var maxDataLength = 86400; //12;
 var updateInterval = 60000;
