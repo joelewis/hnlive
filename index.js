@@ -10,7 +10,7 @@ var moment = require('moment');
 require('dotenv').config() // load config vars from .env into process.env
 
 var db_url = process.env.DATABASE_URL;
-
+console.log('database----', process.env.DATABASE_URL);
 var sequelize = new Sequelize(db_url);
 app.secretkey = process.env.SECRET_KEY;
 var maxDataLength = 86400; //12;
