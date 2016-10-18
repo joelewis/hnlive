@@ -3,9 +3,13 @@ var Sequelize = require('sequelize');
 var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
+var moment = require('moment');
 require('dotenv').config() // load config vars from .env into process.env
 
-var sequelize = new Sequelize(process.env.DATABASE_URL);
+var currentTimezone = moment(new Date()).format('Z');
+var sequelize = new Sequelize(process.env.DATABASE_URL, {
+    timezone: currentTimezone
+});
 
 var maxDataLength = 86400; //12;
 var updateInterval = 60000;
@@ -188,7 +192,7 @@ var updateStats = function() {
             var varianceDps = [];
             
             for (var i=1; i<dps.length; i++) {
-                var varianceDp = {                
+                var varianceDp = {
                     time: dps[i].time,
                     diff: dps[i].diff
                 };
@@ -233,7 +237,7 @@ var getDp = new CronJob({
   cronTime: '*/60 * * * * *',
   onTick: updateData,
   start: false,
-  timeZone: process.env.TZ
+  timeZone: currentTimezone
 });
 getDp.start();
 
@@ -241,6 +245,6 @@ var updateStatsJob = new CronJob({
   cronTime: '0 */30 * * * *',
   onTick: updateStats,
   start: false,
-  timeZone: process.env.TZ
+  timeZone: currentTimezone
 });
 updateStatsJob.start();

@@ -2,136 +2,29 @@
 <html> 
 <head>
   <title>Hacker News Activity Stats</title>
-  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+  <meta name=title” content=”A live activity meter for Hacker News (http://news.ycombinator.com)” />
+  <meta name=”description” content=”A live activity meter for Hacker News (http://news.ycombinator.com)” />
+  <meta name=”keywords” content=”live, meter, hacker, news, stats, activity, hnlive” />
 </head>
-
 <body>
-    <div class="container">
-        
+    <div class="container" style="width: 80%;margin-left:10%;margin-right:10%;">
+        <div id="topbar" style="height:50px;">
+            <div style="margin-top:10px;float:right;">
+                <a href="mailto:lewis.joe.18@gmail.com" style="text-decoration:underline;margin-left:20px;"> mail </a>
+                <a href="https://github.com/joelewis/hnlive/README.md" style="text-decoration:underline;margin-left:20px;display:none;"> about </a>
+                <a href="https://github.com/joelewis/hnlive" style="text-decoration:underline;margin-left:20px;"> code on github </a>
+            </div>
+        </div>
+        <h1 style="font-family:serif;font-weight:bold;text-align:center;text-decoration:underline;color:#5d5d5d;">Hacker News - Realtime Activity</h1>
         <div style="height: 400px;" id="realtime"></div>
         
-        <div class="panel panel-default" style="height: 600px;margin-top: 100px;display:none;">
-          <div class="panel-heading">
-            <h3 class="panel-title"> Last Week Activity </h3>
-          </div>
-          <div class="panel-body">
-            <div id="lastweek"> </div>
-          </div>
-      </div>
+        <h1 style="margin-top:50px;font-family:serif;font-weight:bold;text-align:center;text-decoration:underline;color:#5d5d5d;">Last Week Activity</h1>
+        <div id="lastweek"> </div>
     </div>
 
   <script src="/static/js/underscore.js"></script>
   <script src="/static/js/jquery.js"></script>
   <script src="/static/js/canvasjs.min.js"></script>
-  <script src="/static/js/bootstrap.min.js"></script>
-  
-  <script>
-    var dps = [], realtimeChart, lastWeekChart;
-    var lastWeekActivity = [];
-    var lastWeek = [];
-    var averageWeekDay = [];
-    var yesterday = [];
-    var averageTimeSlot = [];
-    
-    var updateChart = function() {
-        $.get('/variance').then(function(resp) {
-            var datapoints = resp.datapoints;
-            var datapoints = datapoints.map(function(dp) {
-                return {
-                    x: new Date(dp.time).getTime(),
-                    y: dp.variance
-                };
-            })
-            dps.splice(0, dps.length);
-            _.each(datapoints, function(dp) {
-                dps.push(dp);
-            });
-            realtimeChart.render();
-        });
-    };
-    
-    var updateLastWeekChart = function() {
-        $.get('/lastweek').then(function(resp) {
-            var datapoints = _.map(resp.lastWeekActivity, function(dp, key) {
-                return {
-                    legendText: key,
-                    indexLabel: key,
-                    y: dp.average
-                };
-            })
-            
-            // empty contents of lastWeekActivity;
-            lastWeekActivity.splice(0, lastWeekActivity.length); 
-            
-            _.each(datapoints, function(dp) {
-                lastWeekActivity.push(dp);
-            });
-            
-            lastWeekChart.render();
-        });
-    };
-    
-    $(function() { // dom init
-        
-        realtimeChart = new CanvasJS.Chart("realtime", {
-            theme: 'theme1',
-            type: 'doughnut',
-            title :{
-                text: "Hacker News Activity"
-            },		
-            axisX:{  
-                title: 'time',
-                valueFormatString: "hh TT DDDD MMM",
-                gridThickness: 1,
-            },
-            
-            axisY: {
-                gridThickness: 1,
-                title: 'activity',
-            },
-            
-            data: [{
-                type: "area",
-                dataPoints: dps,
-                xValueType: 'dateTime',
-                showInLegend: true,
-                name: 'Activity on adding new comments & top story upvotes'
-            }],
-            legend:{
-                cursor:"pointer",
-            }
-        });
-        
-        lastWeekChart = new CanvasJS.Chart("lastweek", {
-            title :{
-                text: "Last Week Summary"
-            },		
-            axisX:{  
-                title: 'Day of Week',
-                gridThickness: 1,
-            },
-            
-            axisY: {
-                gridThickness: 1,
-                title: 'activity',
-            },
-            
-            data: [{
-                type: "doughnut",
-                dataPoints: lastWeekActivity,
-                showInLegend: true,
-            }],
-            legend:{
-                cursor:"pointer",
-            }
-        });
-        
-        realtimeChart.render();
-        // update every 5 seconds.
-        updateChart();
-        updateLastWeekChart();
-        setInterval(updateChart, 30000);
-    });
-  </script>
+  <script src="/static/js/hnlive.js"></script>
 </body>
 </html>

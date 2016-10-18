@@ -10,7 +10,12 @@ var moment = require('moment');
 require('dotenv').config() // load config vars from .env into process.env
 
 var db_url = process.env.DATABASE_URL;
-var sequelize = new Sequelize(db_url);
+
+var currentTimezone = moment(new Date()).format('Z');
+console.log(currentTimezone);
+var sequelize = new Sequelize(process.env.DATABASE_URL, {
+    timezone: currentTimezone
+});
 app.secretkey = process.env.SECRET_KEY;
 var maxDataLength = 86400; //12;
 
@@ -58,6 +63,38 @@ var getClosestSmoothVariance = function(dps, i) {
     return 0;
 };
 
+var smoothenData = function(dps) {
+    if (! dps.length) {
+        return [];
+    }
+    
+    var varianceDps = [];
+    for (var i=1; i<dps.length; i++) {
+        var varianceDp = {                
+            time: dps[i].time,
+            diff: dps[i].diff
+        };
+        
+        varianceDp.variance = getClosestSmoothVariance(dps, i);
+        varianceDps.push(varianceDp);
+    }
+    
+    var sharpSignals = varianceDps.map(function(dp) {
+        return dp.variance;
+    });
+    
+    var smoothSignals = SG(sharpSignals, 1, {derivative: 0});
+    
+    var varianceDps = varianceDps.map(function(dp, i) {
+        dp.variance = smoothSignals[i];
+        return dp;
+    }).filter(function(dp) {
+        return dp.variance;
+    });
+    
+    return varianceDps;
+};
+
 var dow = {
     0: 'Sunday',
     1: 'Monday',
@@ -69,38 +106,49 @@ var dow = {
 };
 
 var getLastWeekActivity = function() {
+    var promises = [];
     var dfd = deferred();
-    var querySql = 'SELECT * FROM daystats WHERE day >= DATE_SUB(DATE(NOW()), INTERVAL DAYOFWEEK(NOW())-8 DAY) AND day < DATE_SUB(DATE(NOW()), INTERVAL DAYOFWEEK(NOW())-1 DAY) ORDER BY day desc';
-    // for postgres:
-    // var querySql = 'SELECT * FROM daystats WHERE day >= (current_date - cast(extract(dow from current_date) as int) - 7) AND day < (current_date - cast(extract(dow from current_date) as int)) ORDER BY day desc';
+    var resp = {
+        'Sunday': null,
+        'Monday': null,
+        'Tuesday': null,
+        'Wednesday': null,
+        'Thursday': null,
+        'Friday': null,
+        'Saturday': null
+    };
 
-    sequelize.query(querySql, {model: Stat})
-            .then(function(stats) {
-                // group by day of week
-                var dowMap = {
-                    'Sunday': null,
-                    'Monday': null,
-                    'Tuesday': null,
-                    'Wednesday': null,
-                    'Thursday': null,
-                    'Friday': null,
-                    'Saturday': null
-                };
-                _.each(stats, function(stat) {
-                    var d = moment(new Date(stat.day));
-                    dowMap[dow[d.day()]] = stat;
-                });
-                return dowMap
-            }).then(function(dowMap) {
-                for (var key in dowMap) {
-                    if (!dowMap[key]) {
-                        dowMap[key] = {
-                            'average': 0
-                        };
-                    }
-                }
-                dfd.resolve(dowMap);
-            });
+    
+    var today = new Date().setHours(0, 0, 0, 0);
+    today = moment(today);
+    var lastSaturday = today.clone().startOf('week').subtract(1, 'day');
+    for (var i=6; i>=0; i--) {
+        var day = lastSaturday.clone().subtract(i, 'days');
+        var dateString = day.format('YYYY-MM-DD');
+        var querySql = "SELECT * FROM datapoints where DATE(time) = DATE('<dateString>') ORDER BY time desc"
+            .replace(/\<dateString\>/g, dateString);
+        
+        promises.push(sequelize.query(querySql, {model: DataPoint}))
+    }
+    
+    deferred.apply(deferred, promises).then(function() {
+        var results = arguments[0];
+        var resp = {};
+        
+        _.each(results, function(dps) {
+            var dps = smoothenData(dps);
+            var avg = dps.map(function(dp) {
+                return dp.variance
+            }).reduce(function(prev, next) {
+                return prev + next;
+            }) / dps.length;
+            var day = moment(dps[0].time).format('dddd');
+            resp[day] = {average: avg};
+        });
+        dfd.resolve(resp);
+    }).catch(function(){
+        dfd.resolve();
+    })
     return dfd.promise;
 };
 
@@ -116,33 +164,7 @@ app.get('/variance', function (req, res) {
   // stream past 24 hours HN activity data points;
   sequelize.query('SELECT * FROM datapoints WHERE time > current_date - 1 ORDER BY time desc', {model: DataPoint})
     .then(function(dps) {
-        var varianceDps = [];
-        
-        if (! dps.length) {
-            return res.json({datapoints: []});
-        }
-        
-        for (var i=1; i<dps.length; i++) {
-            var varianceDp = {                
-                time: dps[i].time,
-                diff: dps[i].diff
-            };
-            
-            varianceDp.variance = getClosestSmoothVariance(dps, i);
-            varianceDps.push(varianceDp);
-        }
-        
-        var sharpSignals = varianceDps.map(function(dp) {
-            return dp.variance;
-        });
-        
-        var smoothSignals = SG(sharpSignals, 1, {derivative: 0});
-        
-        var varianceDps = varianceDps.map(function(dp, i) {
-            dp.variance = smoothSignals[i];
-            return dp;
-        });
-        
+        var varianceDps = smoothenData(dps);
         // return varianceDps;
         return res.json({datapoints: varianceDps});
         
@@ -151,6 +173,9 @@ app.get('/variance', function (req, res) {
 
 app.get('/lastweek', function(req, res) {
     getLastWeekActivity().then(function(weekactivity) {
+        if (!weekactivity) {
+            weekactivity = {lastWeekActivity: {}};
+        };
         return res.json({lastWeekActivity: weekactivity});
     });
 });
