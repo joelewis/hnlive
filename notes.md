@@ -2,7 +2,7 @@
 
 #### What is the metrics used?
 The rate of change of comments count & upvotes is considered as the metric.
-More the comments & upvotes counts fluctuate, more the activity.
+More the comments & upvotes fluctuate, more the activity.
 
 #### How exactly is the activity computed?
 The top stories are grabbed from the official [HN API](https://hacker-news.firebaseio.com/v0/topstories.json).
