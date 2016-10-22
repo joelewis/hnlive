@@ -92,8 +92,7 @@ $(function() { // dom init
     });
     
     realtimeChart.render();
-    // update every 5 seconds.
     updateChart();
     updateLastWeekChart();
-    setInterval(updateChart, 30000);
+    setInterval(updateChart, 120000); // check every two minutes
 });

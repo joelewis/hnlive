@@ -25,17 +25,8 @@ var DataPoint = sequelize.define('datapoint', {
   diff: Sequelize.BOOLEAN
 });
 
-var Stat = sequelize.define('daystats', {
-    average: Sequelize.INTEGER,
-    day: Sequelize.DATE
-});
-
 DataPoint.sync().then(function() {
     console.log('datapoints - table ready!');
-});
-
-Stat.sync().then(function() {
-    console.log('daystats - table ready!');
 });
 
 var getClosestSmoothVariance = function(dps, i) {
@@ -51,7 +42,6 @@ var getClosestSmoothVariance = function(dps, i) {
         
         i--;
     }
-    
     return 0;
 };
 
@@ -104,8 +94,6 @@ var Firebase = function() {
                     });
                     
                     var arrdiff = arrayDiff(prevStories, currentIds);
-                    console.log('additions: ');
-                    console.log(arrdiff.insertions.length);
                     if (prevStories.length && (arrdiff.insertions.length || arrdiff.deletions.length)) {
                         diff = true;
                     }
@@ -153,7 +141,6 @@ var updateData = function() {
     fb.getCurrentScore(function(score, diff) {
         var xValue = new Date().getTime();
         var yValue = score;
-        console.log(score);
         sequelize.query('SELECT COUNT(*) FROM datapoints').then(function(results) {
             var cursor = results[0];
             var count = cursor[0].count;
@@ -175,62 +162,9 @@ var updateData = function() {
         }).then(function(stat) {
             console.log('data point saved.');
         }).catch(function(errors) {
-            console.log('datapoint save failed.');
             console.log(errors);
         });
     })
-};
-
-var updateStats = function() {
-    var currentTime = new Date();
-    var shouldRecord = currentTime.getUTCHours() == 23 && (currentTime.getUTCMinutes() >= 29 && currentTime.getUTCMinutes() < 59);
-    if (shouldRecord) {
-        // find average of today, by getting all data points within 24 hours span backwards
-        sequelize.query('SELECT * from datapoints where time > current_date - 1', {model: DataPoint})
-        .then(function(dps) {
-            
-            var varianceDps = [];
-            
-            for (var i=1; i<dps.length; i++) {
-                var varianceDp = {
-                    time: dps[i].time,
-                    diff: dps[i].diff
-                };
-                
-                varianceDp.variance = getClosestSmoothVariance(dps, i);
-                varianceDps.push(varianceDp);
-            }
-            
-            var sharpSignals = varianceDps.map(function(dp) {
-                return dp.variance;
-            });
-            
-            var smoothSignals = SG(sharpSignals, 1, {derivative: 0});
-            
-            var varianceDps = varianceDps.map(function(dp, i) {
-                dp.variance = smoothSignals[i];
-                return dp;
-            });
-            
-            var average = varianceDps.map(function(dp) {
-                return dp.variance;
-            }).reduce(function(prev, next) {
-                return prev + next;
-            }) / dps.length;
-            
-            
-            console.log('saving stat for the day.');
-            var stat = Stat.create({
-                average: average,
-                day: new Date().getTime()
-            }).then(function(stat) {
-                console.log('stat saved.');
-            }).catch(function(errors) {
-                console.log('saving stat for the day failed.');
-                console.log(errors);
-            });
-        });
-    }
 };
 
 var getDp = new CronJob({
@@ -240,11 +174,3 @@ var getDp = new CronJob({
   timeZone: currentTimezone
 });
 getDp.start();
-
-var updateStatsJob = new CronJob({
-  cronTime: '0 */30 * * * *',
-  onTick: updateStats,
-  start: false,
-  timeZone: currentTimezone
-});
-updateStatsJob.start();

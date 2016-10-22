@@ -10,41 +10,27 @@ var moment = require('moment');
 require('dotenv').config() // load config vars from .env into process.env
 
 var db_url = process.env.DATABASE_URL;
-
+var server_port = process.env.PORT || 4000;
 var currentTimezone = moment(new Date()).format('Z');
-console.log(currentTimezone);
 var sequelize = new Sequelize(process.env.DATABASE_URL, {
     timezone: currentTimezone
 });
 app.secretkey = process.env.SECRET_KEY;
-var maxDataLength = 86400; //12;
 
-// first define the model
+/*
+ * MODEL: DATAPOINT
+ * ATTRS: [variance, time, diff]
+ */
 var DataPoint = sequelize.define('datapoint', {
   variance: Sequelize.INTEGER,
   time: Sequelize.DATE,
-  diff: Sequelize.BOOLEAN
-});
-
-var Stat = sequelize.define('daystats', {
-    average: Sequelize.INTEGER,
-    day: Sequelize.DATE
+  diff: Sequelize.BOOLEAN // diff = true, if the current datapoint's
+                          // story list, differs from the previous datapoint's story list.
 });
 
 DataPoint.sync().then(function() {
     console.log('datapoints - table ready!');
 });
-
-Stat.sync().then(function() {
-    console.log('daystats - table ready!');
-});
-
-// API Ends
-var topStoriesAPI = "https://hacker-news.firebaseio.com/v0/topstories.json";
-var itemAPI = "https://hacker-news.firebaseio.com/v0/item/{{itemId}}.json";
-var algoliaFrontPageAPI = "http://hn.algolia.com/api/v1/search?tags=front_page";
-
-var updateInterval = 60000;
 
 var getClosestSmoothVariance = function(dps, i) {
     while (i > 1) {
@@ -56,10 +42,8 @@ var getClosestSmoothVariance = function(dps, i) {
             changeMagnitude = changeMagnitude === 0 ? 0 : Math.log(changeMagnitude);
             return changeMagnitude;
         }
-        
         i--;
     }
-    
     return 0;
 };
 
@@ -67,7 +51,7 @@ var smoothenData = function(dps) {
     if (! dps.length) {
         return [];
     }
-    
+
     var varianceDps = [];
     for (var i=1; i<dps.length; i++) {
         var varianceDp = {                
@@ -95,19 +79,8 @@ var smoothenData = function(dps) {
     return varianceDps;
 };
 
-var dow = {
-    0: 'Sunday',
-    1: 'Monday',
-    2: 'Tuesday',
-    3: 'Wednesday',
-    4: 'Thursday',
-    5: 'Friday',
-    6: 'Saturday'
-};
-
 var getLastWeekActivity = function() {
-    var promises = [];
-    var dfd = deferred();
+    var promises = [], dfd = deferred();
     var resp = {
         'Sunday': null,
         'Monday': null,
@@ -118,7 +91,6 @@ var getLastWeekActivity = function() {
         'Saturday': null
     };
 
-    
     var today = new Date().setHours(0, 0, 0, 0);
     today = moment(today);
     var lastSaturday = today.clone().startOf('week').subtract(1, 'day');
@@ -152,16 +124,20 @@ var getLastWeekActivity = function() {
     return dfd.promise;
 };
 
+// home page
 app.get('/', function(req, res) {
     res.sendFile('index.html', {
         root: __dirname + '/public'
     });
 });
 
+// serve static files directory
 app.use('/static', express.static(process.env.PWD+'/public'));
 
+/*
+ * stream past 24 hours HN activity data points;
+ */
 app.get('/variance', function (req, res) {
-  // stream past 24 hours HN activity data points;
   sequelize.query('SELECT * FROM datapoints WHERE time > current_date - 1 ORDER BY time desc', {model: DataPoint})
     .then(function(dps) {
         var varianceDps = smoothenData(dps);
@@ -171,6 +147,9 @@ app.get('/variance', function (req, res) {
     });
 });
 
+/*
+ * Activity summary for last completed week
+ */
 app.get('/lastweek', function(req, res) {
     getLastWeekActivity().then(function(weekactivity) {
         if (!weekactivity) {
@@ -180,6 +159,10 @@ app.get('/lastweek', function(req, res) {
     });
 });
 
+/*
+ * ALERT: This end point only ease out resetting data in dev  env.
+ * You probably want to remove this end, before hosting in production.
+ */
 app.get('/reset/:secretkey', function(req, res) {
     // drops all tables. authenticate with a secret key.
     var secretkey = req.params.secretkey;
@@ -194,6 +177,6 @@ app.get('/reset/:secretkey', function(req, res) {
     }
 });
 
-app.listen(process.env.PORT || 4000, '127.0.0.1', function() {
-  console.log('app listening on port 4000!');
+app.listen(server_port, '127.0.0.1', function() {
+  console.log('app listening on port ' + server_port + '!');
 });
