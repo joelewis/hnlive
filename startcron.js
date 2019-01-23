@@ -3,10 +3,10 @@ var Sequelize = require('sequelize');
 var deferred = require('deferred');
 var najax = require('najax');
 var _ = require('underscore-node');
-var moment = require('moment');
+var moment = require('moment-timezone');
 require('dotenv').config() // load config vars from .env into process.env
 
-var currentTimezone = moment(new Date()).format('Z');
+var currentTimezone = moment.tz.guess();
 var sequelize = new Sequelize(process.env.DATABASE_URL, {
     timezone: currentTimezone
 });
@@ -143,7 +143,8 @@ var updateData = function() {
         var yValue = score;
         sequelize.query('SELECT COUNT(*) FROM datapoints').then(function(results) {
             var cursor = results[0];
-            var count = cursor[0].count;
+            var count = cursor[0]['COUNT(*)'];
+
             if (count > maxDataLength) {
                 console.log('count greater than maxlength. Deleting first row.');
                 DataPoint.findOne().then(function(dp) {
